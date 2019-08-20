@@ -510,8 +510,8 @@ class Client(object):
         if not clean_session and (client_id == "" or client_id is None):
             raise ValueError('A client id must be provided if clean session is False.')
 
-        if transport.lower() not in ('websockets', 'tcp'):
-            raise ValueError('transport must be "websockets" or "tcp", not %s' % transport)
+        if transport.lower() not in ('websockets', 'tcp', 'uds'):
+            raise ValueError('transport must be "websockets", "tcp" or "uds", not %s' % transport)
         self._transport = transport.lower()
         self._protocol = protocol
         self._userdata = userdata
@@ -956,7 +956,10 @@ class Client(object):
         self._messages_reconnect_reset()
 
         try:
-            if sys.version_info < (2, 7) or (3, 0) < sys.version_info < (3, 2):
+            if self._transport == "uds":
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(self._host)
+            elif sys.version_info < (2, 7) or (3, 0) < sys.version_info < (3, 2):
                 sock = socket.create_connection((self._host, self._port))
             else:
                 sock = socket.create_connection((self._host, self._port), source_address=(self._bind_address, 0))
